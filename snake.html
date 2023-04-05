@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="de">
+   <head>
+      <meta charset="UTF-8" />
+      <title>Multiplayer Snake</title>
+      <style>
+         canvas {
+            display: block;
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            border: 4px solid black;
+         }
+         body {
+            margin: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            box-sizing: border-box;
+            padding: 4px;
+         }
+      </style>
+   </head>
+   <body>
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+      <script>
+         const canvas = document.getElementById("gameCanvas");
+         const ctx = canvas.getContext("2d");
+         const lineWidth = 2;
+         const collisionThreshold = lineWidth + 1;
+
+         const speed = 2;
+
+         let playerA = {
+            x: 100,
+            y: 300,
+            direction: "right",
+            trail: [],
+            isPlaying: false
+         };
+
+         let playerB = {
+            x: 700,
+            y: 300,
+            direction: "left",
+            trail: [],
+            isPlaying: false
+         };
+
+         function resizeCanvas() {
+            canvas.width = window.innerWidth - 24; // 8px Abstand zu jeder Seite (4px Rand + 4px Margin)
+            canvas.height = window.innerHeight - 24;
+         }
+
+         resizeCanvas();
+
+         function drawLine(player) {
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+
+            if (player.isPlaying) {
+               player.trail.push({ x: player.x, y: player.y });
+            }
+
+            updatePlayerPosition(player);
+
+            for (let i = 0; i < player.trail.length; i++) {
+               ctx.lineTo(player.trail[i].x, player.trail[i].y);
+            }
+
+            ctx.stroke();
+            ctx.closePath();
+         }
+
+         function updatePlayerPosition(player) {
+            if (player.direction === "right") {
+               player.x += speed;
+            } else if (player.direction === "left") {
+               player.x -= speed;
+            } else if (player.direction === "up") {
+               player.y -= speed;
+            } else if (player.direction === "down") {
+               player.y += speed;
+            }
+         }
+
+         function checkCollision(player, opponent) {
+            const trails = [...player.trail, ...opponent.trail];
+
+            for (let i = 0; i < trails.length - 1; i++) {
+               const dx = player.x - trails[i].x;
+               const dy = player.y - trails[i].y;
+               const distance = Math.sqrt(dx * dx + dy * dy);
+
+               if (distance < lineWidth) {
+                  return true;
+               }
+            }
+
+            if (player.x < 0 || player.x > canvas.width || player.y < 0 || player.y > canvas.height) {
+               return true;
+            }
+
+            return false;
+         }
+
+         function gameOver() {
+            alert("Game over!");
+            location.reload();
+         }
+
+         function updatePlayerADirection(key) {
+            if (key === "y") {
+               playerA.direction = playerA.direction === "right" ? "up" : playerA.direction === "up" ? "left" : playerA.direction === "left" ? "down" : "right";
+            } else if (key === "x") {
+               playerA.direction =
+                  playerA.direction === "right" ? "down" : playerA.direction === "down" ? "left" : playerA.direction === "left" ? "up" : "right";
+            }
+         }
+
+         function updatePlayerBDirection(key) {
+            if (key === ",") {
+               playerB.direction = playerB.direction === "right" ? "up" : playerB.direction === "up" ? "left" : playerB.direction === "left" ? "down" : "right";
+            } else if (key === ".") {
+               playerB.direction =
+                  playerB.direction === "right" ? "down" : playerB.direction === "down" ? "left" : playerB.direction === "left" ? "up" : "right";
+            }
+         }
+
+         function handleKeyPress(event) {
+            const key = event.key;
+
+            if (!playerA.isPlaying && key === " ") {
+               playerA.isPlaying = true;
+               playerB.isPlaying = true;
+            }
+
+            if (playerA.isPlaying) {
+               updatePlayerADirection(key);
+            }
+
+            if (playerB.isPlaying) {
+               updatePlayerBDirection(key);
+            }
+         }
+
+         function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawLine(playerA);
+            drawLine(playerB);
+
+            if (checkCollision(playerA, playerB) || checkCollision(playerB, playerA)) {
+               gameOver();
+            } else {
+               requestAnimationFrame(gameLoop);
+            }
+         }
+
+         document.addEventListener("keydown", handleKeyPress);
+         window.addEventListener("resize", resizeCanvas);
+
+         gameLoop();
+      </script>
+   </body>
+</html>
